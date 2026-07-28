@@ -2,6 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#1c1917">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -87,6 +88,11 @@ details.prime .eg{background:#fafaf9;border:1px solid #e7e5e4;border-radius:8px;
  font-size:17px;cursor:pointer;flex:0 0 auto;line-height:1;padding:0}
 .vframe{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:11px;overflow:hidden}
 .vframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vnote{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+ text-align:center;padding:22px;color:#e7e5e4;font-size:13.5px;line-height:1.6}
+.vhint{position:absolute;left:0;right:0;bottom:0;background:rgba(12,10,9,.9);color:#fbbf24;
+ font-size:12px;padding:8px 12px;display:none}
+.vhint.show{display:block}
 .vlbwhy{color:#d6d3d1;font-size:13px;line-height:1.55;margin-top:10px}
 .vlbf{margin-top:9px;display:flex;gap:14px;flex-wrap:wrap}
 .vlbf a{color:#fbbf24;font-size:12.5px;text-decoration:none;border-bottom:1px dotted #a16207}
@@ -264,9 +270,27 @@ function playVid(exId){
   document.getElementById("vlbw").textContent = n.vwhy || "";
   document.getElementById("vlbyt").href = n.vid;
   document.getElementById("vlbs").href = n.vsearch;
-  document.getElementById("vframe").innerHTML =
-    '<iframe src="https://www.youtube-nocookie.com/embed/' + n.vidid +
-    '?autoplay=1&rel=0&modestbranding=1&playsinline=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+  const box = document.getElementById("vframe");
+
+  // YouTube embeds need a real http(s) origin. Opened from disk there isn't one,
+  // and the player returns "Error 153". Don't pretend — say so and hand over the link.
+  if (location.protocol !== "http:" && location.protocol !== "https:") {
+    box.innerHTML = '<div class="vnote">Embedded video needs the page to be served over http(s).' +
+      ' You've opened this file directly from disk, so YouTube blocks the player (error 153).' +
+      '<br><br>Use the published URL, or tap <b>Open on YouTube</b> below.</div>';
+    document.getElementById("vlb").classList.add("on");
+    document.body.style.overflow = "hidden";
+    return;
+  }
+
+  const src = "https://www.youtube-nocookie.com/embed/" + n.vidid +
+    "?autoplay=1&rel=0&modestbranding=1&playsinline=1&origin=" +
+    encodeURIComponent(location.origin);
+  box.innerHTML = '<iframe src="' + src +
+    '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen"' +
+    ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>' +
+    '<div class="vhint" id="vhint">Still blank? The uploader may not allow embedding &mdash; use Open on YouTube below.</div>';
+  setTimeout(() => { const el = document.getElementById("vhint"); if (el) el.classList.add("show"); }, 4000);
   document.getElementById("vlb").classList.add("on");
   document.body.style.overflow = "hidden";
 }
