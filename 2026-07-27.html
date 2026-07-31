@@ -202,7 +202,7 @@ details.prime .eg{background:#fafaf9;border:1px solid #e7e5e4;border-radius:8px;
 .fxsettings h4{margin:0 0 9px;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:#a8a29e}
 .fxsettings label{display:flex;align-items:center;gap:9px;font-size:13.5px;padding:6px 0;cursor:pointer}
 .fxsettings input{width:17px;height:17px;accent-color:#22c55e}
-.vlb{position:fixed;inset:0;background:rgba(12,10,9,.92);z-index:60;display:none;
+.vlb{position:fixed;inset:0;background:rgba(12,10,9,.92);z-index:85;display:none;
  align-items:center;justify-content:center;padding:14px}
 .vlb.on{display:flex}
 .vlbin{width:100%;max-width:900px}
@@ -438,6 +438,10 @@ function det(bi,ii){ document.getElementById("dt-"+bi+"-"+ii).classList.toggle("
 let hintTimer = null;
 function playVid(exId){
   const n = INFO[exId]; if(!n || !n.vidid) return;
+  // if a session timer is running, hold it - you are watching, not exercising
+  if(document.getElementById("fx").classList.contains("on") && fx.t && !fx.paused){
+    fx.paused = true; fxRender();
+  }
   document.getElementById("vlbt").textContent = n.name;
   document.getElementById("vlbw").textContent = n.vwhy || "";
   document.getElementById("vlbyt").href = n.vid;
