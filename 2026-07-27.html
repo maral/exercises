@@ -26,7 +26,10 @@ nav button{flex:0 0 auto;border:1px solid #e7e5e4;background:#fff;border-radius:
 nav button .d{display:block;font-weight:650;font-size:14px;color:#1c1917}
 nav button.on{background:#1c1917;border-color:#1c1917;color:#d6d3d1}
 nav button.on .d{color:#fff}
-nav button.done{border-color:#86efac;background:#f0fdf4}
+nav button.done{border-color:#86efac;background:#f0fdf4;color:#166534}
+nav button.done .d{color:#14532d}
+nav button.on.done{background:#166534;border-color:#166534;color:#bbf7d0}
+nav button.on.done .d{color:#fff}
 .aer{background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:9px 12px;font-size:13.5px;margin:4px 0 14px}
 .aer b{color:#1d4ed8}
 .bar{height:6px;background:#e7e5e4;border-radius:99px;overflow:hidden;margin:10px 0 16px}
@@ -90,8 +93,8 @@ details.prime .eg{background:#fafaf9;border:1px solid #e7e5e4;border-radius:8px;
 .vframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .vnote{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
  text-align:center;padding:22px;color:#e7e5e4;font-size:13.5px;line-height:1.6}
-.vhint{position:absolute;left:0;right:0;bottom:0;background:rgba(12,10,9,.9);color:#fbbf24;
- font-size:12px;padding:8px 12px;display:none}
+.vhint{display:none;margin-top:9px;color:#fbbf24;font-size:12.5px;line-height:1.5;
+ background:rgba(120,53,15,.35);border:1px solid rgba(180,83,9,.5);border-radius:8px;padding:7px 11px}
 .vhint.show{display:block}
 .vlbwhy{color:#d6d3d1;font-size:13px;line-height:1.55;margin-top:10px}
 .vlbf{margin-top:9px;display:flex;gap:14px;flex-wrap:wrap}
@@ -167,6 +170,7 @@ The groin and left-hip work is the last thing to drop.</p>
   <div class="vlbin">
     <div class="vlbh"><h4 id="vlbt"></h4><button class="x" onclick="closeVid()">&times;</button></div>
     <div class="vframe" id="vframe"></div>
+    <div class="vhint" id="vhint">Video blank? The uploader may not allow embedding &mdash; use <b>Open on YouTube</b> below.</div>
     <div class="vlbwhy" id="vlbw"></div>
     <div class="vlbf">
       <a id="vlbyt" target="_blank" rel="noopener noreferrer">Won&rsquo;t play? Open on YouTube &#8599;</a>
@@ -264,6 +268,7 @@ function renderDay(){
 function go(i){ cur=i; renderNav(); renderDay(); window.scrollTo(0,0); }
 function tog(bi,ii){ const k=key(cur,bi,ii); store[k]=!store[k]; save(); renderNav(); renderDay(); }
 function det(bi,ii){ document.getElementById("dt-"+bi+"-"+ii).classList.toggle("open"); }
+let hintTimer = null;
 function playVid(exId){
   const n = INFO[exId]; if(!n || !n.vidid) return;
   document.getElementById("vlbt").textContent = n.name;
@@ -278,6 +283,7 @@ function playVid(exId){
     box.innerHTML = '<div class="vnote">Embedded video needs the page to be served over http(s).' +
       ' You&rsquo;ve opened this file directly from disk, so YouTube blocks the player (error 153).' +
       '<br><br>Use the published URL, or tap <b>Open on YouTube</b> below.</div>';
+    document.getElementById("vhint").classList.remove("show");
     document.getElementById("vlb").classList.add("on");
     document.body.style.overflow = "hidden";
     return;
@@ -288,13 +294,17 @@ function playVid(exId){
     encodeURIComponent(location.origin);
   box.innerHTML = '<iframe src="' + src +
     '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen"' +
-    ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>' +
-    '<div class="vhint" id="vhint">Still blank? The uploader may not allow embedding &mdash; use Open on YouTube below.</div>';
-  setTimeout(() => { const el = document.getElementById("vhint"); if (el) el.classList.add("show"); }, 4000);
+    ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+  const hint = document.getElementById("vhint");
+  hint.classList.remove("show");
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => hint.classList.add("show"), 6000);
   document.getElementById("vlb").classList.add("on");
   document.body.style.overflow = "hidden";
 }
 function closeVid(){
+  clearTimeout(hintTimer);
+  document.getElementById("vhint").classList.remove("show");
   document.getElementById("vframe").innerHTML = "";   // stops playback
   document.getElementById("vlb").classList.remove("on");
   document.body.style.overflow = "";
