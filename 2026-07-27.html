@@ -96,8 +96,12 @@ details.prime .eg{background:#fafaf9;border:1px solid #e7e5e4;border-radius:8px;
 .fxcount{font-size:12px;color:#a8a29e;font-variant-numeric:tabular-nums;flex:0 0 auto}
 .fxblock{flex:0 0 auto;text-align:center;font-size:11.5px;letter-spacing:.7px;text-transform:uppercase;
  color:#78716c;margin:14px 0 0;font-weight:650}
-.fxbody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
- text-align:center;min-height:0;overflow-y:auto;padding:8px 0}
+.fxbody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+ text-align:center;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+ -webkit-overflow-scrolling:touch;padding:10px 0 4px}
+.fxbody>:first-child{margin-top:auto}
+.fxbody>:last-child{margin-bottom:auto}
+.fxbody>.fxintro{margin-top:0;margin-bottom:0}
 .fxset{font-size:12.5px;color:#a8a29e;letter-spacing:.4px;margin-bottom:6px}
 .fxset.extra{color:#c4b5fd;font-weight:700}
 .fxname{font-size:27px;font-weight:680;line-height:1.2;margin:0 0 8px;max-width:16ch}
@@ -284,28 +288,28 @@ The groin and left-hip work is the last thing to drop.</p>
   <button onclick="startTimer(150)">2:30</button>
 </div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-<g id="i-play"><path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor" stroke="none"/></g>
-<g id="i-pause"><path d="M7 4.5h3.5v15H7zM13.5 4.5H17v15h-3.5z" fill="currentColor" stroke="none"/></g>
-<g id="i-check"><path d="M4.5 12.5l5 5 10-11"/></g>
-<g id="i-back"><path d="M15 5l-7 7 7 7"/></g>
-<g id="i-skip"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></g>
-<g id="i-reset"><path d="M4 11a8 8 0 1 1 2.3 6.3"/><path d="M3.2 5.5v5.2h5.2"/></g>
-<g id="i-list"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.1" fill="currentColor" stroke="none"/></g>
-<g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
-<g id="i-x"><path d="M6 6l12 12M18 6L6 18"/></g>
-<g id="i-sound"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/><path d="M15 9.2a4 4 0 0 1 0 5.6"/><path d="M17.8 6.5a8 8 0 0 1 0 11"/></g>
-<g id="i-trophy"><path d="M7 4h10v5.5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1.8A3.2 3.2 0 0 0 7 11"/><path d="M17 6h3v1.8A3.2 3.2 0 0 1 17 11"/><path d="M12 14.5V19M8.5 19.5h7"/></g>
-<g id="i-clock"><circle cx="12" cy="12" r="8.3"/><path d="M12 7.2V12l3.2 2"/></g>
-<g id="i-kit"><path d="M3.5 8.5h17V20h-17z"/><path d="M2.5 4.2h19v4.3h-19z"/><path d="M9.8 13h4.4"/></g>
-<g id="i-dumbbell"><path d="M5.5 8v8M18.5 8v8M2.8 10.2v3.6M21.2 10.2v3.6M5.5 12h13"/></g>
-<g id="i-layers"><path d="M12 3.2l8.5 4.6-8.5 4.6L3.5 7.8z"/><path d="M3.5 12.2L12 16.8l8.5-4.6"/><path d="M3.5 16.4L12 21l8.5-4.6"/></g>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 4.5h3.5v15H7zM13.5 4.5H17v15h-3.5z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+<symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 2.3 6.3"/><path d="M3.2 5.5v5.2h5.2"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/><path d="M15 9.2a4 4 0 0 1 0 5.6"/><path d="M17.8 6.5a8 8 0 0 1 0 11"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5.5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1.8A3.2 3.2 0 0 0 7 11"/><path d="M17 6h3v1.8A3.2 3.2 0 0 1 17 11"/><path d="M12 14.5V19M8.5 19.5h7"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M12 7.2V12l3.2 2"/></symbol>
+<symbol id="i-kit" viewBox="0 0 24 24"><path d="M3.5 8.5h17V20h-17z"/><path d="M2.5 4.2h19v4.3h-19z"/><path d="M9.8 13h4.4"/></symbol>
+<symbol id="i-dumbbell" viewBox="0 0 24 24"><path d="M5.5 8v8M18.5 8v8M2.8 10.2v3.6M21.2 10.2v3.6M5.5 12h13"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3.2l8.5 4.6-8.5 4.6L3.5 7.8z"/><path d="M3.5 12.2L12 16.8l8.5-4.6"/><path d="M3.5 16.4L12 21l8.5-4.6"/></symbol>
 </defs></svg>
 <div class="fx" id="fx">
   <div class="fxtop">
-    <button onclick="fxAskClose()" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+    <button onclick="fxAskClose()" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
     <div class="fxprog"><i id="fxbar"></i></div>
     <div class="fxcount" id="fxcount"></div>
-    <button onclick="fxSettings()" aria-label="Sound settings"><svg class="ic"><use href="#i-sound"/></svg></button>
+    <button onclick="fxSettings()" aria-label="Sound settings"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sound"/></svg></button>
   </div>
   <div class="fxsettings" id="fxsettings">
     <h4>Sounds</h4>
@@ -609,7 +613,7 @@ function fxRender(){
   if(fx.i < 0){ fxIntro(); return; }
   if(!st){ fxFinish(); return; }
 
-  const BACK='<button class="fxback" onclick="fxBack()" aria-label="Back"><svg class="ic big"><use href="#i-back"/></svg></button>';
+  const BACK='<button class="fxback" onclick="fxBack()" aria-label="Back"><svg class="ic big" viewBox="0 0 24 24"><use href="#i-back"/></svg></button>';
 
   if(st.kind==="rest"){
     acts.innerHTML=""; acts.style.display="none";
@@ -619,18 +623,18 @@ function fxRender(){
       '<div class="fxname" style="font-size:22px;margin-top:8px">'+st.next+"</div>"+
       '<div class="setpill solo" style="margin-top:8px"><b>'+st.nextSet+"</b></div>";
     foot.innerHTML='<div class="fxmain">'+BACK+
-      '<button class="fxgo amber" onclick="fxNext()"><svg class="ic"><use href="#i-skip"/></svg> Skip rest</button></div>'+
-      '<div class="fxctl"><button onclick="fxPause()">'+(fx.paused?'<svg class="ic"><use href="#i-play"/></svg>':'<svg class="ic"><use href="#i-pause"/></svg>')+" "+
+      '<button class="fxgo amber" onclick="fxNext()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-skip"/></svg> Skip rest</button></div>'+
+      '<div class="fxctl"><button onclick="fxPause()">'+(fx.paused?'<svg class="ic" viewBox="0 0 24 24"><use href="#i-play"/></svg>':'<svg class="ic" viewBox="0 0 24 24"><use href="#i-pause"/></svg>')+" "+
       (fx.paused?"Resume":"Pause")+'</button>'+
-      '<button onclick="fx.left+=30;fxPaint()"><svg class="ic"><use href="#i-plus"/></svg> 30 s</button></div>';
+      '<button onclick="fx.left+=30;fxPaint()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-plus"/></svg> 30 s</button></div>';
     return;
   }
 
   const n=INFO[st.id];
   blk.textContent=st.block;
   acts.style.display="flex";
-  acts.innerHTML=(n.vid?'<button onclick="playVid(&quot;'+st.id+'&quot;)"><svg class="ic"><use href="#i-play"/></svg> Video</button>':"")+
-    '<button onclick="fxSheet(&quot;'+st.id+'&quot;)"><svg class="ic"><use href="#i-list"/></svg> Full instructions</button>';
+  acts.innerHTML=(n.vid?'<button onclick="playVid(&quot;'+st.id+'&quot;)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-play"/></svg> Video</button>':"")+
+    '<button onclick="fxSheet(&quot;'+st.id+'&quot;)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-list"/></svg> Full instructions</button>';
 
   const pill='<div class="setpill'+(st.extra?" extra":(st.setTot<=1?" solo":""))+'">'+
     dots(st.setNo, st.setTot)+"<b>"+st.setLabel+"</b></div>";
@@ -644,20 +648,20 @@ function fxRender(){
       '<div class="fxbig" id="fxclock">'+fx.left+"</div>"+
       '<div class="fxunit">then '+st.seconds+" seconds</div>"+tail;
     foot.innerHTML='<div class="fxmain">'+BACK+
-      '<button class="fxgo" onclick="fx.left=1"><svg class="ic"><use href="#i-play"/></svg> Start now</button></div>'+
-      '<div class="fxctl"><button onclick="fxNext()"><svg class="ic"><use href="#i-skip"/></svg> Skip set</button></div>';
+      '<button class="fxgo" onclick="fx.left=1"><svg class="ic" viewBox="0 0 24 24"><use href="#i-play"/></svg> Start now</button></div>'+
+      '<div class="fxctl"><button onclick="fxNext()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-skip"/></svg> Skip set</button></div>';
   } else if(st.timed){
     body.innerHTML=head+'<div class="fxbig" id="fxclock">'+mmss(fx.left)+"</div>"+
       '<div class="fxunit">'+(fx.paused?"Paused":"Hold")+"</div>"+tail;
     foot.innerHTML='<div class="fxmain">'+BACK+
       '<button class="fxgo'+(fx.paused?"":" amber")+'" onclick="fxPause()">'+
-      (fx.paused?'<svg class="ic"><use href="#i-play"/></svg>':'<svg class="ic"><use href="#i-pause"/></svg>')+" "+(fx.paused?"Resume":"Pause")+"</button></div>"+
-      '<div class="fxctl"><button onclick="fxReset()"><svg class="ic"><use href="#i-reset"/></svg> Reset</button>'+
-      '<button onclick="fxNext()"><svg class="ic"><use href="#i-skip"/></svg> Skip set</button></div>';
+      (fx.paused?'<svg class="ic" viewBox="0 0 24 24"><use href="#i-play"/></svg>':'<svg class="ic" viewBox="0 0 24 24"><use href="#i-pause"/></svg>')+" "+(fx.paused?"Resume":"Pause")+"</button></div>"+
+      '<div class="fxctl"><button onclick="fxReset()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-reset"/></svg> Reset</button>'+
+      '<button onclick="fxNext()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-skip"/></svg> Skip set</button></div>';
   } else {
     body.innerHTML=head+'<div class="fxbig sm">'+st.reps+"</div>"+tail;
     foot.innerHTML='<div class="fxmain">'+BACK+
-      '<button class="fxgo" onclick="fxNext()"><svg class="ic"><use href="#i-check"/></svg> Next</button></div>';
+      '<button class="fxgo" onclick="fxNext()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-check"/></svg> Next</button></div>';
   }
 }
 function fxIntro(){
@@ -705,7 +709,7 @@ function fxIntro(){
     (resuming?'<div class="fxctl"><button onclick="fxClear('+fx.day+");fxOpen("+fx.day+',-1)">'+
       ICON("reset")+" Start over</button></div>":"");
 }
-function ICON(n){ return '<svg class="ic"><use href="#i-'+n+'"/></svg>'; }
+function ICON(n){ return '<svg class="ic" viewBox="0 0 24 24"><use href="#i-'+n+'"/></svg>'; }
 function fxSheet(id){
   const n=INFO[id];
   document.getElementById("fxsh").textContent=n.name;
@@ -733,7 +737,7 @@ function fxFinish(){
     'same or better and you build from here.</div>'+
     '<div class="fxstat"><div><b>'+exAll+'</b><span>sets</span></div>'+
     '<div><b>'+mins+'</b><span>minutes</span></div></div></div>';
-  document.getElementById("fxfoot").innerHTML='<div class="fxmain"><button class="fxgo" onclick="fxClose()"><svg class="ic"><use href="#i-check"/></svg> Finish</button></div>';
+  document.getElementById("fxfoot").innerHTML='<div class="fxmain"><button class="fxgo" onclick="fxClose()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-check"/></svg> Finish</button></div>';
   tone(880,180); setTimeout(()=>tone(1175,180),190); setTimeout(()=>tone(1568,420),380);
   buzz([120,80,120,80,220]);
 }
