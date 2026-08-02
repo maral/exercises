@@ -43,6 +43,17 @@ nav button.done{border-color:#86efac;background:#f0fdf4;color:#166534}
 nav button.done .d{color:#14532d}
 nav button.on.done{background:#166534;border-color:#166534;color:#bbf7d0}
 nav button.on.done .d{color:#fff}
+nav button.skipped{border-color:#fcd34d;background:#fffbeb;color:#92400e}
+nav button.skipped .d{color:#92400e;text-decoration:line-through}
+nav button.on.skipped{background:#92400e;border-color:#92400e;color:#fde68a}
+nav button.on.skipped .d{color:#fff}
+.skipban{background:#fffbeb;border:1px solid #fcd34d;border-left:3px solid #f59e0b;
+ border-radius:0 12px 12px 0;padding:14px 15px;margin:0 0 16px}
+.skipban b{display:block;font-size:15px;color:#92400e;margin-bottom:5px}
+.skipban p{margin:0 0 12px;font-size:13.5px;color:#78716c;line-height:1.5}
+.skipbtn{display:block;width:100%;margin:14px 0 0;padding:12px;border:1px solid #d6d3d1;
+ background:#fff;border-radius:11px;font:inherit;font-size:13.5px;color:#78716c;cursor:pointer}
+.skipbtn.undo{margin:0;border-color:#f59e0b;background:#f59e0b;color:#fff;font-weight:600}
 .aer{background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:9px 12px;font-size:13.5px;margin:4px 0 14px}
 .aer b{color:#1d4ed8}
 .bar{height:6px;background:#e7e5e4;border-radius:99px;overflow:hidden;margin:10px 0 16px}
@@ -307,7 +318,7 @@ exercise, no rest, keep moving.</p>
 <p style="margin-top:12px"><b>Running out of time?</b> Cut from the bottom of the day, never the top.
 The groin and left-hip work is the last thing to drop.</p>
 </div></details>
-<div class="wknav"><a href="#.html" class="off" aria-label="Previous week"><svg class="ic" viewBox="0 0 24 24"><use href="#i-back"/></svg></a><select onchange="location.href=this.value+&quot;.html&quot;"><option value="2026-07-27" selected>Week of 27 Jul – 2 Aug 2026</option><option value="2026-08-03">Week of 4 – 10 Aug 2026</option></select><a href="2026-08-03.html" class="" aria-label="Next week"><svg class="ic" viewBox="0 0 24 24" style="transform:scaleX(-1)"><use href="#i-back"/></svg></a></div>
+<div class="wknav"><a href="#.html" class="off" aria-label="Previous week"><svg class="ic" viewBox="0 0 24 24"><use href="#i-back"/></svg></a><select onchange="location.href=this.value+&quot;.html&quot;"><option value="2026-07-27" selected>Week of 27 Jul – 2 Aug 2026</option><option value="2026-08-03">Week of 3 – 9 Aug 2026</option></select><a href="2026-08-03.html" class="" aria-label="Next week"><svg class="ic" viewBox="0 0 24 24" style="transform:scaleX(-1)"><use href="#i-back"/></svg></a></div>
 <nav id="nav"></nav>
 <div class="bar"><i id="pbar"></i></div>
 <div id="day"></div>
@@ -430,16 +441,23 @@ function dayDone(di){
 }
 function renderNav(){
   document.getElementById("nav").innerHTML = DATA.days.map((d,i)=>{
-    const done = dayDone(i), tot = dayItems(i);
-    return `<button class="${i===cur?'on':''} ${done===tot&&tot?'done':''}" onclick="go(${i})">
-      <span class="d">${d.day}</span>${done}/${tot}</button>`;
+    const done = dayDone(i), tot = dayItems(i), sk = !!store["skip."+i];
+    const cls = [i===cur?"on":"", sk?"skipped":(done===tot&&tot?"done":"")].join(" ");
+    return `<button class="${cls}" onclick="go(${i})">
+      <span class="d">${d.day}</span>${sk?"skipped":done+"/"+tot}</button>`;
   }).join("");
 }
 function renderDay(){
   const d = DATA.days[cur];
   const exN = d.steps.filter(s=>s.kind==="ex").length;
-  let h = `<button class="startbtn" onclick="fxStart(${cur})">Start exercising
-    <span>${exN} sets, guided step by step</span></button>`;
+  const skipped = !!store["skip."+cur];
+  let h = skipped
+    ? `<div class="skipban"><b>Skipped</b>
+        <p>Nothing is lost. This stays the next session you do, and the export records the skip
+        so the following week gets shifted rather than replanned.</p>
+        <button class="skipbtn undo" onclick="toggleSkip()">Undo skip</button></div>`
+    : `<button class="startbtn" onclick="fxStart(${cur})">Start exercising
+        <span>${exN} sets, guided step by step</span></button>`;
   if (d.aerobic) h += `<div class="aer">${d.aerobic}</div>`;
   d.blocks.forEach((b,bi)=>{
     h += `<div class="blk"><div class="blkh"><h3>${b.name}</h3>
@@ -485,6 +503,7 @@ function renderDay(){
        '<textarea id="notebox" placeholder="How did it go? Anything that hurt, felt easy, ran short on time, or needs changing next week. Leave empty if nothing to say."' +
        ' oninput="noteSave()">' + (store[nk] ? String(store[nk]).replace(/</g,"&lt;") : "") + '</textarea>' +
        '<div class="hint" id="notehint">Saved on this device and included in the export.</div></div>';
+  if(!skipped) h += '<button class="skipbtn" onclick="toggleSkip()">Skip this day</button>';
   h += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
   document.getElementById("day").innerHTML = h;
   const tot = dayItems(cur);
@@ -498,6 +517,21 @@ function noteSave(){
   if(h){ h.textContent="Saved · included in the export"; h.className="hint saved";
     clearTimeout(noteT);
     noteT=setTimeout(()=>{ h.textContent="Saved on this device and included in the export."; h.className="hint"; },2200); }
+}
+const FULLDAY = {Mon:"Monday",Tue:"Tuesday",Wed:"Wednesday",Thu:"Thursday",
+                 Fri:"Friday",Sat:"Saturday",Sun:"Sunday"};
+function toggleSkip(){
+  const d = DATA.days[cur], k = "skip."+cur;
+  if(store[k]){
+    delete store[k];                       // undoing a misclick needs no confirmation
+  } else {
+    const nm = (FULLDAY[d.day] || d.day) + " " + d.date;
+    if(!confirm("Are you sure you want to skip " + nm + "?\n\n" +
+                "The exercises are not lost - this stays the next session you do, " +
+                "and everything after it shifts by a day.")) return;
+    store[k] = true;
+  }
+  save(); renderNav(); renderDay(); window.scrollTo(0,0);
 }
 function go(i){ cur=i; renderNav(); renderDay(); window.scrollTo(0,0); }
 function tog(bi,ii){ const k=key(cur,bi,ii); store[k]=!store[k]; save(); renderNav(); renderDay(); }
@@ -884,7 +918,8 @@ function expData(){
     let done=0, tot=0;
     d.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{ tot++; if(store[key(di,bi,ii)]) done++; }));
     return {day:d.day, date:d.date, location:d.location, exercisesTicked:done, exercisesTotal:tot,
-            complete: tot>0 && done===tot, note: store["note."+di] || ""};
+            complete: tot>0 && done===tot, skipped: !!store["skip."+di],
+            note: store["note."+di] || ""};
   });
   const markers = {};
   ["adductor_squeeze_long_lever","resisted_situp","longest_run","next_morning","loads"]
@@ -899,12 +934,14 @@ function expData(){
   };
 }
 function expSummary(d){
-  const done=d.days.filter(x=>x.complete).map(x=>x.day);
-  const part=d.days.filter(x=>!x.complete&&x.exercisesTicked>0);
+  const done=d.days.filter(x=>x.complete&&!x.skipped).map(x=>x.day);
+  const part=d.days.filter(x=>!x.complete&&!x.skipped&&x.exercisesTicked>0);
+  const skip=d.days.filter(x=>x.skipped).map(x=>x.day);
   const L=[];
   L.push(d.plan);
   L.push("Days completed: "+(done.length?done.join(", "):"none")+"  ("+done.length+" of 7)");
   if(part.length) L.push("Partial: "+part.map(x=>x.day+" "+x.exercisesTicked+"/"+x.exercisesTotal).join(", "));
+  if(skip.length) L.push("Skipped: "+skip.join(", ")+"  (shift the remainder, do not replan)");
   if(d.sessions.length){
     L.push("");
     L.push("Timed sessions recorded: "+d.sessions.length);
