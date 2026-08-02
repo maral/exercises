@@ -85,6 +85,23 @@ details.prime .eg{background:#fafaf9;border:1px solid #e7e5e4;border-radius:8px;
 .startbtn{display:block;width:100%;margin:0 0 16px;padding:15px;border:0;border-radius:13px;
  background:#166534;color:#fff;font:inherit;font-size:16px;font-weight:650;cursor:pointer}
 .startbtn span{display:block;font-weight:400;font-size:12.5px;color:#bbf7d0;margin-top:3px}
+.expbtn{display:block;width:100%;margin:14px 0 0;padding:12px;border:1px solid #d6d3d1;
+ background:#fff;border-radius:11px;font:inherit;font-size:13.5px;color:#57534e;cursor:pointer}
+.exp{position:fixed;inset:0;background:rgba(12,10,9,.8);z-index:95;display:none;
+ align-items:center;justify-content:center;padding:16px}
+.exp.on{display:flex}
+.expin{background:#fff;color:#1c1917;border-radius:15px;padding:18px;max-width:560px;width:100%;
+ max-height:88vh;overflow-y:auto}
+.expin h3{margin:0 0 4px;font-size:17px}
+.expin .sm{font-size:12.5px;color:#78716c;margin-bottom:12px;line-height:1.5}
+.expsum{background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:11px 13px;
+ font-size:13px;line-height:1.7;margin-bottom:12px;white-space:pre-wrap}
+.expin textarea{width:100%;height:150px;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;
+ border:1px solid #e7e5e4;border-radius:10px;padding:10px;resize:vertical;background:#fafaf9}
+.exprow{display:flex;gap:8px;margin-top:10px}
+.exprow button{flex:1;padding:12px;border-radius:11px;font:inherit;font-size:14px;cursor:pointer;
+ border:1px solid #e7e5e4;background:#fafaf9;display:flex;align-items:center;justify-content:center;gap:7px}
+.exprow button.pri{background:#166534;color:#fff;border-color:#166534;font-weight:650}
 .fx{position:fixed;inset:0;background:#0c0a09;color:#fafaf9;z-index:70;display:none;
  flex-direction:column;padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 14px)}
 .fx.on{display:flex}
@@ -336,6 +353,20 @@ The groin and left-hip work is the last thing to drop.</p>
     <div class="det" id="fxsc"></div>
     <button class="fxclose2" onclick="fxSheetClose()">Close</button></div>
 </div>
+<div class="exp" id="exp" onclick="if(event.target===this)expClose()">
+  <div class="expin">
+    <h3>Session log</h3>
+    <div class="sm">Everything this page has recorded. Copy it into the chat, or download the
+      file and drop it in your exercise folder.</div>
+    <div class="expsum" id="expsum"></div>
+    <textarea id="exptxt" readonly></textarea>
+    <div class="exprow">
+      <button class="pri" onclick="expCopy()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-check"/></svg> <span id="expcopy">Copy</span></button>
+      <button onclick="expDownload()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-kit"/></svg> Download</button>
+      <button onclick="expClose()">Close</button>
+    </div>
+  </div>
+</div>
 <div class="ask" id="ask"><div class="askin" id="askin"></div></div>
 <div class="vlb" id="vlb" onclick="if(event.target===this)closeVid()">
   <div class="vlbin">
@@ -542,7 +573,12 @@ function stopTimer(){ clearInterval(tid); document.getElementById("timer").class
 
 
 // ===================== guided session =====================
-let fx = {day:0, i:0, phase:"", left:0, paused:false, t:null, started:0, wake:null};
+let fx = {day:0, i:0, phase:"", left:0, paused:false, t:null, started:0, wake:null, skipped:0};
+const LOGK = "drv-log-" + WEEK;
+function logRead(){ try{ return JSON.parse(localStorage.getItem(LOGK) || "[]"); }catch(e){ return []; } }
+function logAppend(rec){
+  try{ const l = logRead(); l.push(rec); localStorage.setItem(LOGK, JSON.stringify(l)); }catch(e){}
+}
 let snd = {master:true, end:true, tick:true, vib:true, wake:true};
 try { snd = Object.assign(snd, JSON.parse(localStorage.getItem("drv-snd") || "{}")); } catch(e) {}
 
@@ -592,7 +628,7 @@ function askClose(){ document.getElementById("ask").classList.remove("on"); }
 
 function fxStart(di){ fxOpen(di, -1); }   // always land on the prep screen first
 function fxOpen(di, i){
-  fx.day=di; fx.i=i; fx.paused=false;
+  fx.day=di; fx.i=i; fx.paused=false; if(i<=0) fx.skipped=0;
   const sv=fxSaved(di); fx.started = (sv && sv.started) ? sv.started : Date.now();
   document.getElementById("fx").classList.add("on");
   document.body.style.overflow="hidden";
@@ -625,6 +661,7 @@ function fxRun(){
     fxPaint();
   },1000);
 }
+function fxSkip(){ fx.skipped=(fx.skipped||0)+1; fxNext(); }
 function fxNext(){
   fx.i++; 
   if(fx.i >= DATA.days[fx.day].steps.length){ fxFinish(); return; }
@@ -698,7 +735,7 @@ function fxRender(){
       '<div class="fxunit">then '+st.seconds+" seconds</div>"+tail;
     foot.innerHTML='<div class="fxmain">'+BACK+
       '<button class="fxgo" onclick="fx.left=1"><svg class="ic" viewBox="0 0 24 24"><use href="#i-play"/></svg> Start now</button></div>'+
-      '<div class="fxctl"><button onclick="fxNext()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-skip"/></svg> Skip set</button></div>';
+      '<div class="fxctl"><button onclick="fxSkip()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-skip"/></svg> Skip set</button></div>';
   } else if(st.timed){
     body.innerHTML=head+'<div class="fxbig" id="fxclock">'+mmss(fx.left)+"</div>"+
       '<div class="fxunit">'+(fx.paused?"Paused":"Hold")+"</div>"+tail;
@@ -706,7 +743,7 @@ function fxRender(){
       '<button class="fxgo'+(fx.paused?"":" amber")+'" onclick="fxPause()">'+
       (fx.paused?'<svg class="ic" viewBox="0 0 24 24"><use href="#i-play"/></svg>':'<svg class="ic" viewBox="0 0 24 24"><use href="#i-pause"/></svg>')+" "+(fx.paused?"Resume":"Pause")+"</button></div>"+
       '<div class="fxctl"><button onclick="fxReset()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-reset"/></svg> Reset</button>'+
-      '<button onclick="fxNext()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-skip"/></svg> Skip set</button></div>';
+      '<button onclick="fxSkip()"><svg class="ic" viewBox="0 0 24 24"><use href="#i-skip"/></svg> Skip set</button></div>';
   } else {
     body.innerHTML=head+'<div class="fxbig sm">'+st.reps+"</div>"+tail;
     foot.innerHTML='<div class="fxmain">'+BACK+
@@ -774,6 +811,9 @@ function fxFinish(){
   const exAll=steps.filter(s=>s.kind==="ex").length;
   const mins=Math.max(1,Math.round((Date.now()-fx.started)/60000));
   day.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{ store[key(fx.day,bi,ii)]=true; }));
+  logAppend({day:day.day, date:day.date, location:day.location,
+             started:new Date(fx.started).toISOString(), finished:new Date().toISOString(),
+             minutes:mins, sets:exAll, skipped:fx.skipped||0});
   save(); fxClear(fx.day);
   document.getElementById("fxbar").style.width="100%";
   document.getElementById("fxacts").innerHTML=""; document.getElementById("fxacts").style.display="none";
@@ -806,6 +846,78 @@ function fxClose(){
   document.getElementById("fxsettings").classList.remove("on");
   document.body.style.overflow="";
   renderNav(); renderDay();
+}
+
+
+// ---- export ----
+function expData(){
+  const days = DATA.days.map((d,di)=>{
+    let done=0, tot=0;
+    d.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{ tot++; if(store[key(di,bi,ii)]) done++; }));
+    return {day:d.day, date:d.date, location:d.location, exercisesTicked:done, exercisesTotal:tot,
+            complete: tot>0 && done===tot};
+  });
+  const markers = {};
+  ["adductor_squeeze_long_lever","resisted_situp","longest_run","next_morning","loads"]
+    .forEach((k,i)=>{ const v=store["rev."+i]; if(v) markers[k]=v; });
+  const inProgress = {};
+  DATA.days.forEach((d,di)=>{ const sv=fxSaved(di); if(sv) inProgress[d.day]=sv; });
+  return {
+    schema:"exercise-driver/1", week:WEEK, plan:DATA.title,
+    exportedAt:new Date().toISOString(),
+    timezoneOffsetMin:new Date().getTimezoneOffset(),
+    days, markers, sessions:logRead(), unfinished:inProgress
+  };
+}
+function expSummary(d){
+  const done=d.days.filter(x=>x.complete).map(x=>x.day);
+  const part=d.days.filter(x=>!x.complete&&x.exercisesTicked>0);
+  const L=[];
+  L.push(d.plan);
+  L.push("Days completed: "+(done.length?done.join(", "):"none")+"  ("+done.length+" of 7)");
+  if(part.length) L.push("Partial: "+part.map(x=>x.day+" "+x.exercisesTicked+"/"+x.exercisesTotal).join(", "));
+  if(d.sessions.length){
+    L.push("");
+    L.push("Timed sessions recorded: "+d.sessions.length);
+    d.sessions.forEach(s=>{
+      L.push("  "+s.day+"  "+s.finished.slice(0,16).replace("T"," ")+"  "+s.minutes+" min, "+
+             s.sets+" sets"+(s.skipped?", "+s.skipped+" skipped":""));
+    });
+  } else {
+    L.push("");
+    L.push("No timed sessions recorded (logging was added after this week started).");
+  }
+  const mk=Object.keys(d.markers);
+  L.push("");
+  L.push("Weekly markers: "+(mk.length? mk.map(k=>k+"="+d.markers[k]).join(", ") : "not filled in"));
+  return L.join("\n");
+}
+function expOpen(){
+  const d=expData();
+  document.getElementById("expsum").textContent=expSummary(d);
+  document.getElementById("exptxt").value=JSON.stringify(d,null,2);
+  document.getElementById("expcopy").textContent="Copy";
+  document.getElementById("exp").classList.add("on");
+  document.body.style.overflow="hidden";
+}
+function expClose(){ document.getElementById("exp").classList.remove("on"); document.body.style.overflow=""; }
+function expCopy(){
+  const ta=document.getElementById("exptxt"), lbl=document.getElementById("expcopy");
+  const txt=ta.value;
+  const done=()=>{ lbl.textContent="Copied"; setTimeout(()=>lbl.textContent="Copy",1800); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, ()=>{ ta.select(); document.execCommand("copy"); done(); });
+  } else { ta.select(); ta.setSelectionRange(0,999999); document.execCommand("copy"); done(); }
+}
+function expDownload(){
+  try{
+    const blob=new Blob([document.getElementById("exptxt").value],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="training-log-"+WEEK+".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+  }catch(e){}
 }
 
 renderNav(); renderDay();
