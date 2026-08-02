@@ -15,6 +15,19 @@ body{margin:0;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
 header{padding:18px 0 10px}
 h1{font-size:19px;margin:0 0 3px;font-weight:650}
 .sub{color:#78716c;font-size:13px}
+.wknav{display:flex;align-items:center;gap:7px;margin:0 0 10px}
+.wknav select{flex:1;min-width:0;padding:9px 10px;border:1px solid #e7e5e4;border-radius:10px;
+ font:inherit;font-size:13.5px;background:#fff;color:#1c1917;-webkit-appearance:none;appearance:none}
+.wknav a{flex:0 0 auto;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+ border:1px solid #e7e5e4;border-radius:10px;background:#fff;color:#57534e;text-decoration:none}
+.wknav a.off{opacity:.32;pointer-events:none}
+.notes{margin:16px 0 0;background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:13px 14px}
+.notes label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.7px;
+ color:#78716c;font-weight:700;margin-bottom:7px}
+.notes textarea{width:100%;min-height:74px;border:1px solid #e7e5e4;border-radius:9px;padding:9px 11px;
+ font:inherit;font-size:14px;line-height:1.5;resize:vertical;background:#fafaf9;color:#1c1917}
+.notes .hint{font-size:12px;color:#a8a29e;margin-top:6px;line-height:1.45}
+.notes .saved{color:#166534}
 .rules{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:12px 14px;margin:12px 0;font-size:13.5px}
 .rules b{color:#c2410c}
 .rules ul{margin:6px 0 0;padding-left:18px}.rules li{margin:4px 0}
@@ -294,6 +307,7 @@ exercise, no rest, keep moving.</p>
 <p style="margin-top:12px"><b>Running out of time?</b> Cut from the bottom of the day, never the top.
 The groin and left-hip work is the last thing to drop.</p>
 </div></details>
+
 <nav id="nav"></nav>
 <div class="bar"><i id="pbar"></i></div>
 <div id="day"></div>
@@ -466,9 +480,24 @@ function renderDay(){
     });
     h += `<p style="font-size:12.5px;color:#78716c;margin:12px 0 0">If the first two trend down over four weeks, the protocol is working — regardless of how any single day felt.</p></div>`;
   }
+  const nk = "note." + cur;
+  h += '<div class="notes"><label>Notes for ' + d.day + '</label>' +
+       '<textarea id="notebox" placeholder="How did it go? Anything that hurt, felt easy, ran short on time, or needs changing next week. Leave empty if nothing to say."' +
+       ' oninput="noteSave()">' + (store[nk] ? String(store[nk]).replace(/</g,"&lt;") : "") + '</textarea>' +
+       '<div class="hint" id="notehint">Saved on this device and included in the export.</div></div>';
+  h += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
   document.getElementById("day").innerHTML = h;
   const tot = dayItems(cur);
   document.getElementById("pbar").style.width = tot ? (dayDone(cur)/tot*100)+"%" : "0%";
+}
+let noteT=null;
+function noteSave(){
+  const el=document.getElementById("notebox"); if(!el) return;
+  store["note."+cur]=el.value; save();
+  const h=document.getElementById("notehint");
+  if(h){ h.textContent="Saved · included in the export"; h.className="hint saved";
+    clearTimeout(noteT);
+    noteT=setTimeout(()=>{ h.textContent="Saved on this device and included in the export."; h.className="hint"; },2200); }
 }
 function go(i){ cur=i; renderNav(); renderDay(); window.scrollTo(0,0); }
 function tog(bi,ii){ const k=key(cur,bi,ii); store[k]=!store[k]; save(); renderNav(); renderDay(); }
@@ -855,7 +884,7 @@ function expData(){
     let done=0, tot=0;
     d.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{ tot++; if(store[key(di,bi,ii)]) done++; }));
     return {day:d.day, date:d.date, location:d.location, exercisesTicked:done, exercisesTotal:tot,
-            complete: tot>0 && done===tot};
+            complete: tot>0 && done===tot, note: store["note."+di] || ""};
   });
   const markers = {};
   ["adductor_squeeze_long_lever","resisted_situp","longest_run","next_morning","loads"]
@@ -890,6 +919,12 @@ function expSummary(d){
   const mk=Object.keys(d.markers);
   L.push("");
   L.push("Weekly markers: "+(mk.length? mk.map(k=>k+"="+d.markers[k]).join(", ") : "not filled in"));
+  const noted=d.days.filter(x=>x.note && x.note.trim());
+  if(noted.length){
+    L.push("");
+    L.push("Notes:");
+    noted.forEach(x=>L.push("  "+x.day+": "+x.note.trim().replace(/\s+/g," ")));
+  }
   return L.join("\n");
 }
 function expOpen(){
