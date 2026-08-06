@@ -54,6 +54,10 @@ nav button.on.skipped .d{color:#fff}
 .skipbtn{display:block;width:100%;margin:14px 0 0;padding:12px;border:1px solid #d6d3d1;
  background:#fff;border-radius:11px;font:inherit;font-size:13.5px;color:#78716c;cursor:pointer}
 .skipbtn.undo{margin:0;border-color:#f59e0b;background:#f59e0b;color:#fff;font-weight:600}
+nav button.empty{border-style:dashed;color:#a8a29e}
+nav button.empty .d{color:#a8a29e}
+.movedban{background:#f5f3ff;border-left:3px solid #8b5cf6;border-radius:0 8px 8px 0;
+ padding:9px 12px;font-size:13px;color:#5b21b6;margin:0 0 12px;line-height:1.5}
 .aer{background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:9px 12px;font-size:13.5px;margin:4px 0 14px}
 .aer b{color:#1d4ed8}
 .bar{height:6px;background:#e7e5e4;border-radius:99px;overflow:hidden;margin:10px 0 16px}
@@ -433,30 +437,94 @@ let cur = 0;
 const today = new Date().toLocaleDateString("en-US",{weekday:"short"});
 if (DAYS.indexOf(today) > -1) cur = DAYS.indexOf(today);
 
-function dayItems(di){
-  let n=0; DATA.days[di].blocks.forEach(b => n += b.items.length); return n;
+// ---- slots vs sessions ------------------------------------------------------
+// SLOTS are the seven fixed Mon-Sun cells. DATA.days are the seven SESSIONS, a
+// queue. Skipping a slot leaves it empty and pushes every later session one slot
+// later; whatever falls off Sunday is carried into next week by the coach.
+// All progress is stored against the SESSION index, so ticks travel with the
+// content when it shifts.
+const SLOTS = DATA.days.map(d => ({day:d.day, date:d.date}));
+const WEEKMARKS = (DATA.days.find(d => d.markers) || {}).markers || null;
+const isSkipped = i => !!store["skip."+i];
+function sesFor(i){                 // session showing in slot i, or -1 if none
+  if(isSkipped(i)) return -1;
+  let s = 0;
+  for(let k=0;k<i;k++) if(!isSkipped(k)) s++;
+  return s < DATA.days.length ? s : -1;
 }
-function dayDone(di){
-  let n=0; DATA.days[di].blocks.forEach((b,bi) => b.items.forEach((_,ii)=>{ if(store[key(di,bi,ii)]) n++; })); return n;
+function carried(){                 // sessions that never come up this week
+  const shown = new Set();
+  SLOTS.forEach((_,i)=>{ const s = sesFor(i); if(s>=0) shown.add(s); });
+  return DATA.days.map((_,s)=>s).filter(s => !shown.has(s));
+}
+function marksSlot(){               // where the weekly numbers box belongs
+  let last = -1, owner = -1;
+  SLOTS.forEach((_,i)=>{ const s = sesFor(i);
+    if(s>=0){ last = i; if(owner<0 && DATA.days[s].markers) owner = i; } });
+  return owner >= 0 ? owner : last;  // if its session got carried, use the last day standing
+}
+function dayItems(si){
+  let n=0; DATA.days[si].blocks.forEach(b => n += b.items.length); return n;
+}
+function dayDone(si){
+  let n=0; DATA.days[si].blocks.forEach((b,bi) => b.items.forEach((_,ii)=>{ if(store[key(si,bi,ii)]) n++; })); return n;
 }
 function renderNav(){
-  document.getElementById("nav").innerHTML = DATA.days.map((d,i)=>{
-    const done = dayDone(i), tot = dayItems(i), sk = !!store["skip."+i];
-    const cls = [i===cur?"on":"", sk?"skipped":(done===tot&&tot?"done":"")].join(" ");
-    return `<button class="${cls}" onclick="go(${i})">
-      <span class="d">${d.day}</span>${sk?"skipped":done+"/"+tot}</button>`;
+  document.getElementById("nav").innerHTML = SLOTS.map((sl,i)=>{
+    const sk = isSkipped(i), s = sesFor(i);
+    let sub, cls;
+    if(sk){ sub = "skipped"; cls = "skipped"; }
+    else if(s < 0){ sub = "&mdash;"; cls = "empty"; }
+    else { const done = dayDone(s), tot = dayItems(s);
+           sub = done+"/"+tot; cls = (done===tot && tot) ? "done" : ""; }
+    return `<button class="${(i===cur?"on ":"")+cls}" onclick="go(${i})">
+      <span class="d">${sl.day}</span>${sub}</button>`;
   }).join("");
 }
+let noteKey = "";
 function renderDay(){
-  const d = DATA.days[cur];
+  const sl = SLOTS[cur], ses = sesFor(cur);
+
+  // --- skipped slot: no exercises at all, just the banner ---
+  if(isSkipped(cur)){
+    noteKey = "note.d" + cur;
+    let hs = `<div class="skipban"><b>${sl.day} ${sl.date} &mdash; skipped</b>
+        <p>No exercises here. This session and everything after it moved forward one day.
+        Whatever falls off the end of Sunday is carried into next week&rsquo;s plan, so no
+        pillar gets dropped.</p>
+        <button class="skipbtn undo" onclick="toggleSkip()">Undo skip</button></div>`;
+    hs += noteBox(sl.day + " " + sl.date);
+    hs += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
+    document.getElementById("day").innerHTML = hs;
+    document.getElementById("pbar").style.width = "0%";
+    return;
+  }
+
+  // --- slot past the end of the queue: everything left has shifted out of the week ---
+  if(ses < 0){
+    noteKey = "note.d" + cur;
+    const c = carried();
+    let he = `<div class="skipban"><b>${sl.day} ${sl.date} &mdash; nothing scheduled</b>
+        <p>The skips earlier this week pushed ${c.length} session${c.length===1?"":"s"} past
+        Sunday. ${c.length? "They carry into next week&rsquo;s plan unchanged &mdash; " +
+        c.map(s=>DATA.days[s].day).join(" and ") + ". " : ""}Undo a skip to pull them back in.</p></div>`;
+    he += noteBox(sl.day + " " + sl.date);
+    he += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
+    document.getElementById("day").innerHTML = he;
+    document.getElementById("pbar").style.width = "0%";
+    return;
+  }
+
+  const d = DATA.days[ses];
+  noteKey = "note." + ses;
   const exN = d.steps.filter(s=>s.kind==="ex").length;
-  const skipped = !!store["skip."+cur];
-  let h = skipped
-    ? `<div class="skipban"><b>Skipped</b>
-        <p>Nothing is lost. This stays the next session you do, and the export records the skip
-        so the following week gets shifted rather than replanned.</p>
-        <button class="skipbtn undo" onclick="toggleSkip()">Undo skip</button></div>`
-    : `<button class="startbtn" onclick="fxStart(${cur})">Start exercising
+  let h = "";
+  if(ses !== cur){
+    const n = cur - ses;
+    h += `<div class="movedban">Planned as <b>${d.day}</b>. Moved ${n} day${n===1?"":"s"}
+      later by the skip${n===1?"":"s"} earlier this week &mdash; the session itself is unchanged.</div>`;
+  }
+  h += `<button class="startbtn" onclick="fxStart(${ses})">Start exercising
         <span>${exN} sets, guided step by step</span></button>`;
   if (d.aerobic) h += `<div class="aer">${d.aerobic}</div>`;
   d.blocks.forEach((b,bi)=>{
@@ -465,7 +533,7 @@ function renderDay(){
       <div class="rest">${b.rest}</div>
       <div class="howto" id="hw-${bi}">${HOWTO[b.style]}</div>`;
     b.items.forEach((it,ii)=>{
-      const k = key(cur,bi,ii), on = !!store[k], nfo = INFO[it.id];
+      const k = key(ses,bi,ii), on = !!store[k], nfo = INFO[it.id];
       const p = nfo.pillarLabel;
       h += `<div class="ex ${on?'done':''}" id="ex-${bi}-${ii}">
         <div class="exh">
@@ -489,30 +557,32 @@ function renderDay(){
     });
     h += `</div>`;
   });
-  if (d.markers){
+  if (WEEKMARKS && cur === marksSlot()){
     h += `<div class="rev"><h3>Weekly numbers → markers.csv</h3>`;
-    d.markers.forEach((m,i)=>{
+    WEEKMARKS.forEach((m,i)=>{
       const k = "rev."+i;
       h += `<label>${m}</label><input value="${(store[k]||'').replace(/"/g,'&quot;')}"
         oninput="store['${k}']=this.value;save()">`;
     });
     h += `<p style="font-size:12.5px;color:#78716c;margin:12px 0 0">If the first two trend down over four weeks, the protocol is working — regardless of how any single day felt.</p></div>`;
   }
-  const nk = "note." + cur;
-  h += '<div class="notes"><label>Notes for ' + d.day + '</label>' +
-       '<textarea id="notebox" placeholder="How did it go? Anything that hurt, felt easy, ran short on time, or needs changing next week. Leave empty if nothing to say."' +
-       ' oninput="noteSave()">' + (store[nk] ? String(store[nk]).replace(/</g,"&lt;") : "") + '</textarea>' +
-       '<div class="hint" id="notehint">Saved on this device and included in the export.</div></div>';
-  if(!skipped) h += '<button class="skipbtn" onclick="toggleSkip()">Skip this day</button>';
+  h += noteBox(d.day + (ses!==cur ? " (done on " + sl.day + ")" : ""));
+  h += '<button class="skipbtn" onclick="toggleSkip()">Skip this day</button>';
   h += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
   document.getElementById("day").innerHTML = h;
-  const tot = dayItems(cur);
-  document.getElementById("pbar").style.width = tot ? (dayDone(cur)/tot*100)+"%" : "0%";
+  const tot = dayItems(ses);
+  document.getElementById("pbar").style.width = tot ? (dayDone(ses)/tot*100)+"%" : "0%";
+}
+function noteBox(label){
+  return '<div class="notes"><label>Notes for ' + label + '</label>' +
+    '<textarea id="notebox" placeholder="How did it go? Anything that hurt, felt easy, ran short on time, or needs changing next week. Leave empty if nothing to say."' +
+    ' oninput="noteSave()">' + (store[noteKey] ? String(store[noteKey]).replace(/</g,"&lt;") : "") + '</textarea>' +
+    '<div class="hint" id="notehint">Saved on this device and included in the export.</div></div>';
 }
 let noteT=null;
 function noteSave(){
   const el=document.getElementById("notebox"); if(!el) return;
-  store["note."+cur]=el.value; save();
+  store[noteKey]=el.value; save();
   const h=document.getElementById("notehint");
   if(h){ h.textContent="Saved · included in the export"; h.className="hint saved";
     clearTimeout(noteT);
@@ -521,20 +591,21 @@ function noteSave(){
 const FULLDAY = {Mon:"Monday",Tue:"Tuesday",Wed:"Wednesday",Thu:"Thursday",
                  Fri:"Friday",Sat:"Saturday",Sun:"Sunday"};
 function toggleSkip(){
-  const d = DATA.days[cur], k = "skip."+cur;
+  const sl = SLOTS[cur], k = "skip."+cur;
   if(store[k]){
     delete store[k];                       // undoing a misclick needs no confirmation
   } else {
-    const nm = (FULLDAY[d.day] || d.day) + " " + d.date;
+    const nm = (FULLDAY[sl.day] || sl.day) + " " + sl.date;
     if(!confirm("Are you sure you want to skip " + nm + "?\n\n" +
-                "The exercises are not lost - this stays the next session you do, " +
-                "and everything after it shifts by a day.")) return;
+                "No exercises are lost. This session and every one after it move forward " +
+                "a day, and anything pushed past Sunday is carried into next week.")) return;
     store[k] = true;
   }
   save(); renderNav(); renderDay(); window.scrollTo(0,0);
 }
 function go(i){ cur=i; renderNav(); renderDay(); window.scrollTo(0,0); }
-function tog(bi,ii){ const k=key(cur,bi,ii); store[k]=!store[k]; save(); renderNav(); renderDay(); }
+function tog(bi,ii){ const s=sesFor(cur); if(s<0) return;
+  const k=key(s,bi,ii); store[k]=!store[k]; save(); renderNav(); renderDay(); }
 function det(bi,ii){ document.getElementById("dt-"+bi+"-"+ii).classList.toggle("open"); }
 // ---- full screen ----
 const fsEl = () => document.documentElement;
@@ -914,13 +985,22 @@ function fxClose(){
 
 // ---- export ----
 function expData(){
-  const days = DATA.days.map((d,di)=>{
+  const days = SLOTS.map((sl,i)=>{
+    const ses = sesFor(i);
+    if(ses < 0)
+      return {day:sl.day, date:sl.date, skipped:isSkipped(i), session:null,
+              location:null, exercisesTicked:0, exercisesTotal:0, complete:false,
+              note: store["note.d"+i] || ""};
+    const d = DATA.days[ses];
     let done=0, tot=0;
-    d.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{ tot++; if(store[key(di,bi,ii)]) done++; }));
-    return {day:d.day, date:d.date, location:d.location, exercisesTicked:done, exercisesTotal:tot,
-            complete: tot>0 && done===tot, skipped: !!store["skip."+di],
-            note: store["note."+di] || ""};
+    d.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{ tot++; if(store[key(ses,bi,ii)]) done++; }));
+    return {day:sl.day, date:sl.date, skipped:false,
+            session:{n:ses+1, plannedDay:d.day, plannedDate:d.date, movedDays:i-ses},
+            location:d.location, exercisesTicked:done, exercisesTotal:tot,
+            complete: tot>0 && done===tot, note: store["note."+ses] || ""};
   });
+  const carriedOver = carried().map(s=>({n:s+1, plannedDay:DATA.days[s].day,
+    plannedDate:DATA.days[s].date, location:DATA.days[s].location}));
   const markers = {};
   ["adductor_squeeze_long_lever","resisted_situp","longest_run","next_morning","loads"]
     .forEach((k,i)=>{ const v=store["rev."+i]; if(v) markers[k]=v; });
@@ -930,7 +1010,7 @@ function expData(){
     schema:"exercise-driver/1", week:WEEK, plan:DATA.title,
     exportedAt:new Date().toISOString(),
     timezoneOffsetMin:new Date().getTimezoneOffset(),
-    days, markers, sessions:logRead(), unfinished:inProgress
+    days, carriedOver, markers, sessions:logRead(), unfinished:inProgress
   };
 }
 function expSummary(d){
@@ -941,7 +1021,12 @@ function expSummary(d){
   L.push(d.plan);
   L.push("Days completed: "+(done.length?done.join(", "):"none")+"  ("+done.length+" of 7)");
   if(part.length) L.push("Partial: "+part.map(x=>x.day+" "+x.exercisesTicked+"/"+x.exercisesTotal).join(", "));
-  if(skip.length) L.push("Skipped: "+skip.join(", ")+"  (shift the remainder, do not replan)");
+  if(skip.length) L.push("Skipped: "+skip.join(", ")+"  (everything after shifted forward)");
+  const moved=d.days.filter(x=>x.session && x.session.movedDays>0);
+  if(moved.length) L.push("Shifted: "+moved.map(x=>x.session.plannedDay+" session done on "+x.day).join(", "));
+  if(d.carriedOver && d.carriedOver.length)
+    L.push("CARRY INTO NEXT WEEK: "+d.carriedOver.map(c=>c.plannedDay+" ("+c.location+")").join(", ")+
+           "  - put these at the front of the next Mon-Sun plan, unchanged");
   if(d.sessions.length){
     L.push("");
     L.push("Timed sessions recorded: "+d.sessions.length);
