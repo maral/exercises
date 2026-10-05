@@ -31,6 +31,18 @@ h1{font-size:19px;margin:0 0 3px;font-weight:650}
 .rules{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:12px 14px;margin:12px 0;font-size:13.5px}
 .rules b{color:#c2410c}
 .rules ul{margin:6px 0 0;padding-left:18px}.rules li{margin:4px 0}
+.topinfo{margin:10px 0}
+.topinfo>summary{cursor:pointer;list-style:none;background:#fff;border:1px solid #e7e5e4;border-radius:10px;
+ padding:9px 12px;font-size:13px;font-weight:650;color:#44403c}
+.topinfo>summary::-webkit-details-marker{display:none}
+.topinfo>summary .tihint{float:right;font-weight:400;color:#a8a29e;font-size:12px}
+.topinfo[open]>summary .tihint .c{display:inline}.topinfo>summary .tihint .c{display:none}
+.topinfo[open]>summary .tihint .o{display:none}
+.runs{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:10px 14px;margin:12px 0;font-size:13.5px}
+.runs ul{margin:6px 0 0;padding-left:0;list-style:none}.runs li{margin:5px 0;line-height:1.45}
+.runs li.done{color:#78716c}.runs li b{color:#047857}
+.runday{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:9px 12px;font-size:13.5px;margin:0 0 10px;line-height:1.45}
+.runday b{color:#047857}
 .marks{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:9px 12px;font-size:13px;margin:10px 0}
 nav{display:flex;gap:5px;overflow-x:auto;padding:4px 0 10px;position:sticky;top:0;background:#f5f5f4;z-index:20;
  -webkit-overflow-scrolling:touch}
@@ -47,6 +59,8 @@ nav button.skipped{border-color:#fcd34d;background:#fffbeb;color:#92400e}
 nav button.skipped .d{color:#92400e;text-decoration:line-through}
 nav button.on.skipped{background:#92400e;border-color:#92400e;color:#fde68a}
 nav button.on.skipped .d{color:#fff}
+.restban{background:#f0f9ff;border:1px solid #bae6fd;border-left:3px solid #0ea5e9;border-radius:10px;
+ padding:11px 13px;margin:0 0 12px;font-size:13.5px}.restban p{margin:4px 0 0;color:#57534e}
 .skipban{background:#fffbeb;border:1px solid #fcd34d;border-left:3px solid #f59e0b;
  border-radius:0 12px 12px 0;padding:14px 15px;margin:0 0 16px}
 .skipban b{display:block;font-size:15px;color:#92400e;margin-bottom:5px}
@@ -294,8 +308,11 @@ footer{font-size:12px;color:#a8a29e;text-align:center;padding:22px 0 0}
   <h1>Week of 10 – 16 Aug 2026</h1>
   <div class="sub">Phase 1 · rehab-dominant · week 3 of 3 · ~30 min/day, seven days · every dose is level 1 from the exercise bank</div>
 </header>
+
+<details class="topinfo" id="topinfo" open><summary>Markers &amp; rules for this week <span class="tihint"><span class="o">show</span><span class="c">hide</span></span></summary>
 <div class="marks"><strong>Markers entering the week:</strong> Adductor squeeze (long lever) 1/10 · resisted sit-up 1/10 — both down from 2/10, and the squeeze has now fallen 3 → 2 → 2 → 1 since baseline. That is the first genuine downward trend of the block, and it opens the level gate that has held pillars 1 and 2 at level 1 since 26 July. Week 31 was 6 of 6 sessions that came up, every exercise ticked, and a 5 km run at 1/10 that read 1/10 the next morning.</div>
 <div class="rules"><strong>Rules that override the page</strong><ul><li>Pain up to <b>3/10</b> during and after is fine and expected.</li><li><b>The next morning is the verdict.</b> Same or better → keep going. Worse but settled in 24 h → repeat the session. Worse at 48 h → drop a level.</li><li><b>Left side first, one extra set on the left</b> wherever it's marked.</li><li><b>One level advance this week, and only one: the Copenhagen goes to a straight top leg.</b> The squeeze marker is the number that fell, so the adductor side is what earns the step. Everything else in the groin and left-hip work holds at level 1.</li><li><b>The rectus work stays where it is, and gets lighter.</b> You named dead bug and reverse curls as the 2–3/10 provokers. Dead bug drops out this week and reverse curls appear once instead of twice — the long-lever plank covers the same sub-target without the bite.</li><li><b>Volume comes down.</b> Home sessions are 6–7 exercises, not ten. You advance a level this week, so nothing else gets bigger — never both in the same week.</li><li><b>Monday is week 31's last session</b>, carried over unchanged. You skipped Wednesday, so it never came up. It holds the reverse Nordic and the glute-bridge max-rep retest.</li><li><b>Skipping is allowed and built in.</b> Tap <b>Skip this day</b>, confirm, and the rest of the week shifts along behind you. Do not jump ahead to catch up.</li></ul></div>
+</details>
 <details class="prime"><summary>How to read a dose &amp; run a block</summary><div class="body">
 <p><b>&ldquo;3 &times; 10 / side&rdquo; means 3 sets, and each set is 10 left + 10 right.</b>
 That&rsquo;s 30 per side in total, not 10. Do left, then right, inside the same set &mdash;
@@ -495,7 +512,7 @@ function renderDay(){
         <button class="skipbtn undo" onclick="toggleSkip()">Undo skip</button></div>`;
     hs += noteBox(sl.day + " " + sl.date);
     hs += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
-    document.getElementById("day").innerHTML = hs;
+    document.getElementById("day").innerHTML = runHtml(cur) + hs;
     document.getElementById("pbar").style.width = "0%";
     return;
   }
@@ -510,7 +527,7 @@ function renderDay(){
         c.map(s=>DATA.days[s].day).join(" and ") + ". " : ""}Undo a skip to pull them back in.</p></div>`;
     he += noteBox(sl.day + " " + sl.date);
     he += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
-    document.getElementById("day").innerHTML = he;
+    document.getElementById("day").innerHTML = runHtml(cur) + he;
     document.getElementById("pbar").style.width = "0%";
     return;
   }
@@ -524,7 +541,8 @@ function renderDay(){
     h += `<div class="movedban">Planned as <b>${d.day}</b>. Moved ${n} day${n===1?"":"s"}
       later by the skip${n===1?"":"s"} earlier this week &mdash; the session itself is unchanged.</div>`;
   }
-  h += `<button class="startbtn" onclick="fxStart(${ses})">Start exercising
+  if (d.rest) h += `<div class="restban"><b>Rest day &mdash; planned</b><p>Nothing to tick today. That is the plan, not a gap in it.</p></div>`;
+  else h += `<button class="startbtn" onclick="fxStart(${ses})">Start exercising
         <span>${exN} sets, guided step by step</span></button>`;
   if (d.aerobic) h += `<div class="aer">${d.aerobic}</div>`;
   d.blocks.forEach((b,bi)=>{
@@ -569,7 +587,7 @@ function renderDay(){
   h += noteBox(d.day + (ses!==cur ? " (done on " + sl.day + ")" : ""));
   h += '<button class="skipbtn" onclick="toggleSkip()">Skip this day</button>';
   h += '<button class="expbtn" onclick="expOpen()">Export session log &mdash; send it to your coach</button>';
-  document.getElementById("day").innerHTML = h;
+  document.getElementById("day").innerHTML = runHtml(cur) + h;
   const tot = dayItems(ses);
   document.getElementById("pbar").style.width = tot ? (dayDone(ses)/tot*100)+"%" : "0%";
 }
@@ -996,8 +1014,8 @@ function expData(){
     d.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{ tot++; if(store[key(ses,bi,ii)]) done++; }));
     return {day:sl.day, date:sl.date, skipped:false,
             session:{n:ses+1, plannedDay:d.day, plannedDate:d.date, movedDays:i-ses},
-            location:d.location, exercisesTicked:done, exercisesTotal:tot,
-            complete: tot>0 && done===tot, note: store["note."+ses] || ""};
+            location:d.location, rest:!!d.rest, exercisesTicked:done, exercisesTotal:tot,
+            complete: d.rest ? true : (tot>0 && done===tot), note: store["note."+ses] || ""};
   });
   const carriedOver = carried().map(s=>({n:s+1, plannedDay:DATA.days[s].day,
     plannedDate:DATA.days[s].date, location:DATA.days[s].location}));
@@ -1077,5 +1095,21 @@ function expDownload(){
   }catch(e){}
 }
 
+// Runs are pinned to the CALENDAR day, not to the session queue: a skipped
+// strength session must never drag a run onto another weekday.
+function runHtml(i){
+  const sl = SLOTS[i];
+  return (DATA.runs||[]).filter(r => r.day === sl.day).map(r =>
+    '<div class="runday"><b>Run' + (r.status === "done" ? " (done)" : "") + ': ' + r.title + '</b>' +
+    (r.detail ? ' &mdash; ' + r.detail : '') + '</div>').join("");
+}
+// The markers + rules block remembers whether you hid it, across every week.
+function topInit(){
+  const t = document.getElementById("topinfo");
+  if(!t) return;
+  try { const v = localStorage.getItem("drv-topinfo"); if(v === "closed") t.open = false; if(v === "open") t.open = true; } catch(e) {}
+  t.addEventListener("toggle", function(){ try { localStorage.setItem("drv-topinfo", t.open ? "open" : "closed"); } catch(e) {} });
+}
+topInit();
 renderNav(); renderDay();
 </script></body></html>
